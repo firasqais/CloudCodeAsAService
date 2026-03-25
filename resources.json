@@ -1,0 +1,43 @@
+{
+  "instance_sizes": {
+    "small": {
+      "cpu": 1,
+      "memory_gb": 2,
+      "monthly_cost_estimate": 20
+    },
+    "medium": {
+      "cpu": 2,
+      "memory_gb": 4,
+      "monthly_cost_estimate": 40
+    },
+    "large": {
+      "cpu": 4,
+      "memory_gb": 8,
+      "monthly_cost_estimate": 80
+    }
+  },
+  "regions": {
+    "ap-southeast-2": "Sydney",
+    "us-east-1": "N. Virginia",
+    "eu-west-1": "Ireland"
+  },
+  "storage_types": {
+    "object": "Object storage for static files, uploads, and backups",
+    "block": "Block storage for attached virtual machine disks"
+  },
+  "network_profiles": {
+    "public-web-app": {
+      "description": "Internet-facing web application profile",
+      "public_access": true,
+      "open_ports": [
+        80,
+        443
+      ]
+    },
+    "private-internal": {
+      "description": "Private internal application profile",
+      "public_access": false,
+      "open_ports": []
+    }
+  }
+}
