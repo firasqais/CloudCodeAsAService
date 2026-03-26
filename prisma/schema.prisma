@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String
+  phone         String?
+  avatar        String?
+  bio           String?
+  isVerified    Boolean   @default(false)
+  isLandlord    Boolean   @default(false)
+  city          String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  listings      Listing[]
+  favorites     Favorite[]
+  sentMessages     Message[]  @relation("SentMessages")
+  receivedMessages Message[]  @relation("ReceivedMessages")
+  reviews       Review[]   @relation("ReviewsGiven")
+  reviewsReceived Review[] @relation("ReviewsReceived")
+  conversations ConversationParticipant[]
+}
+
+model Listing {
+  id              String    @id @default(cuid())
+  title           String
+  description     String
+  price           Int       // in NPR
+  negotiable      Boolean   @default(false)
+  deposit         Int?      // in NPR
+  listingType     String    // "room", "flat", "house", "pg", "roommate"
+  roomType        String    // "single", "shared", "master", "studio"
+  furnishing      String    // "furnished", "semi-furnished", "unfurnished"
+  availableFrom   DateTime
+  minStay         String?   // "1 month", "3 months", "6 months", "1 year"
+  maxOccupants    Int       @default(1)
+  currentOccupants Int      @default(0)
+
+  // Location
+  city            String
+  district        String?
+  area            String
+  streetAddress   String?
+  landmark        String?
+  mapLat          Float?
+  mapLng          Float?
+
+  // Property details
+  bedrooms        Int       @default(1)
+  bathrooms       Int       @default(1)
+  floorNumber     Int?
+  totalFloors     Int?
+  squareFeet      Int?
+  facingDirection String?   // "north", "south", "east", "west"
+
+  // Amenities
+  wifi            Boolean   @default(false)
+  parking         Boolean   @default(false)
+  water24hrs      Boolean   @default(false)
+  electricity     Boolean   @default(false)
+  generator       Boolean   @default(false)
+  solarPower      Boolean   @default(false)
+  laundry         Boolean   @default(false)
+  kitchen         Boolean   @default(false)
+  ac              Boolean   @default(false)
+  heater          Boolean   @default(false)
+  tv              Boolean   @default(false)
+  fridge          Boolean   @default(false)
+  washingMachine  Boolean   @default(false)
+  security        Boolean   @default(false)
+  cctv            Boolean   @default(false)
+  lift            Boolean   @default(false)
+  garden          Boolean   @default(false)
+  rooftop         Boolean   @default(false)
+  gym             Boolean   @default(false)
+
+  // Preferences (for roommate search)
+  preferredGender String?   // "male", "female", "any"
+  preferredOccupation String? // "student", "working", "any"
+  petsAllowed     Boolean   @default(false)
+  smokingAllowed  Boolean   @default(false)
+  alcoholAllowed  Boolean   @default(false)
+  visitorsAllowed Boolean   @default(true)
+  cookingAllowed  Boolean   @default(true)
+
+  // Bills included
+  waterBillIncluded Boolean @default(false)
+  electricBillIncluded Boolean @default(false)
+  internetIncluded Boolean  @default(false)
+
+  // Media
+  images          ListingImage[]
+
+  // Status
+  isActive        Boolean   @default(true)
+  isFeatured      Boolean   @default(false)
+  isVerified      Boolean   @default(false)
+  views           Int       @default(0)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  favorites       Favorite[]
+  reviews         Review[]
+  conversations   Conversation[]
+}
+
+model ListingImage {
+  id        String   @id @default(cuid())
+  url       String
+  order     Int      @default(0)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+}
+
+model Conversation {
+  id           String    @id @default(cuid())
+  listingId    String?
+  listing      Listing?  @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  userId         String
+  conversationId String
+  lastRead       DateTime?
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conversationId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  content        String
+  createdAt      DateTime     @default(now())
+  isRead         Boolean      @default(false)
+
+  senderId       String
+  receiverId     String
+  conversationId String
+
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver       User         @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  rating      Int      // 1-5
+  comment     String
+  createdAt   DateTime @default(now())
+
+  reviewerId  String
+  revieweeId  String
+  listingId   String?
+
+  reviewer    User     @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewee    User     @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Cascade)
+  listing     Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+}
